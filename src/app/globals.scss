@@ -1,0 +1,38 @@
+// Skip Carbon's built-in font loading - we'll load IBM Plex via CDN in layout.tsx
+@use '@carbon/react/scss/config' with (
+  $css--font-face: false
+);
+@use '@carbon/react/scss/themes' as themes;
+@use '@carbon/react/scss/theme' with (
+  $theme: themes.$white
+);
+@use '@carbon/react';
+
+
+.cds--side-nav {
+  border-right: 1px solid var(--cds-border-subtle);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cds-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cds-border-subtle);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cds-border-strong);
+}

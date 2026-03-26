@@ -1,0 +1,879 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                             String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                          String                           @unique
+  passwordHash                   String?                          @map("password_hash")
+  metadata                       Json?                            @default("{}")
+  createdAt                      DateTime                         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                      DateTime                         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  agent_buyer_purchases          agent_buyer_purchases[]
+  agent_mock_transactions        agent_mock_transactions[]
+  agents                         Agent[]
+  apiKeys                        ApiKey[]
+  audit_logs                     audit_logs[]
+  discounts                      discounts[]
+  disputes                       disputes[]
+  files                          files[]
+  idempotency_keys               idempotency_keys[]
+  merchant                       Merchant?
+  native_apps                    native_apps[]
+  pricing_features               pricing_features[]
+  pricing_model_history          pricing_model_history[]
+  pricing_models                 pricing_models[]
+  recurring_payments             recurring_payments[]
+  subscription_scheduled_changes subscription_scheduled_changes[]
+  subscriptions                  subscriptions[]
+  usage_alerts                   usage_alerts[]
+  usage_events                   usage_events[]
+  usage_meters                   usage_meters[]
+  webhookEndpoints               WebhookEndpoint[]
+  webhook_events                 webhook_events[]
+
+  @@map("users")
+}
+
+model Merchant {
+  id                  String                  @id @db.Uuid
+  email               String?
+  name                String?
+  businessName        String?                 @map("business_name")
+  createdAt           DateTime                @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  businessLogoUrl     String?                 @map("business_logo_url")
+  details             String?
+  website             String?
+  contactEmail        String?                 @map("contact_email")
+  contactPhone        String?                 @map("contact_phone")
+  socialLinks         Json?                   @default("{}") @map("social_links")
+  setupCompletedSteps Int[]                   @default([]) @map("setup_completed_steps")
+  setupAllComplete    Boolean?                @default(false) @map("setup_all_complete")
+  setupApiKeyLocked   Boolean?                @default(false) @map("setup_api_key_locked")
+  updatedAt           DateTime?               @default(now()) @map("updated_at") @db.Timestamptz(6)
+  businessAddress     Json?                   @map("business_address")
+  businessCountry     String?                 @map("business_country")
+  businessType        String?                 @map("business_type")
+  businessIndustry    String?                 @map("business_industry")
+  x402PayoutWallet    String?                 @map("x402_payout_wallet")
+  x402Network         String?                 @map("x402_network")
+  x402FacilitatorUrl  String?                 @map("x402_facilitator_url")
+  accountNumber       String?                 @map("account_number")
+  annualCcSales       Decimal?                @map("annual_cc_sales") @db.Decimal
+  averageTicket       Decimal?                @map("average_ticket") @db.Decimal
+  bankName            String?                 @map("bank_name")
+  businessStartDate   String?                 @map("business_start_date")
+  dbaName             String?                 @map("dba_name")
+  highTicket          Decimal?                @map("high_ticket") @db.Decimal
+  monthlySalesVolume  Decimal?                @map("monthly_sales_volume") @db.Decimal
+  ownershipType       String?                 @map("ownership_type")
+  routingNumber       String?                 @map("routing_number")
+  signerOwnershipPct  Decimal?                @map("signer_ownership_pct") @db.Decimal
+  signerSsn           String?                 @map("signer_ssn")
+  signerTitle         String?                 @map("signer_title")
+  solaAppId           Int?                    @map("sola_app_id")
+  solaRef             String?                 @map("sola_ref")
+  taxId               String?                 @map("tax_id")
+  privyWalletId       String?                 @map("privy_wallet_id")
+  status              String?                 @default("active")
+  suspendedAt         DateTime?               @map("suspended_at") @db.Timestamptz(6)
+  suspendedBy         String?                 @map("suspended_by")
+  suspensionReason    String?                 @map("suspension_reason")
+  riskScore           Int?                    @default(0) @map("risk_score")
+  adminNotes          String?                 @map("admin_notes")
+  posthogDistinctId   String?                 @map("posthog_distinct_id")
+  lastActiveAt        DateTime?               @map("last_active_at") @db.Timestamptz(6)
+  customers           Customer[]
+  invoices            invoices[]
+  alerts              MerchantAlert[]
+  statusHistory       MerchantStatusHistory[]
+  user                User                    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payment_links       payment_links[]
+  settlements         settlements[]
+  transactions        Transaction[]
+
+  @@map("merchants")
+}
+
+model Transaction {
+  id                String             @id
+  merchantId        String             @map("merchant_id") @db.Uuid
+  customerId        String?            @map("customer_id") @db.Uuid
+  amount            Decimal            @db.Decimal
+  net               Decimal            @db.Decimal
+  fee               Decimal            @db.Decimal
+  status            String             @default("pending")
+  type              String             @default("payment")
+  description       String?
+  customerDetails   Json?              @map("customer_details")
+  createdAt         DateTime           @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  paymentLinkId     String?            @map("payment_link_id")
+  customerEmail     String?            @map("customer_email")
+  customerName      String?            @map("customer_name")
+  customerMobile    String?            @map("customer_mobile")
+  customerAddress   Json?              @map("customer_address")
+  itemName          String?            @map("item_name")
+  itemDescription   String?            @map("item_description")
+  itemImage         String?            @map("item_image")
+  receiptToken      String?            @map("receipt_token")
+  invoiceId         String?            @map("invoice_id") @db.Uuid
+  currency          String?            @default("USD")
+  paymentMethodInfo Json?              @map("payment_method_info")
+  checkoutSessionId String?            @map("checkout_session_id") @db.Uuid
+  paymentMethod     String?            @map("payment_method")
+  refunds           refunds[]
+  checkout_sessions checkout_sessions? @relation(fields: [checkoutSessionId], references: [id], onUpdate: NoAction)
+  customers         Customer?          @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  invoices          invoices?          @relation(fields: [invoiceId], references: [id], onUpdate: NoAction)
+  merchant          Merchant           @relation(fields: [merchantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payment_links     payment_links?     @relation(fields: [paymentLinkId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([invoiceId], map: "idx_transactions_invoice_id")
+  @@index([merchantId, createdAt(sort: Desc)], map: "idx_transactions_merchant_created")
+  @@index([paymentLinkId], map: "idx_transactions_payment_link_id")
+  @@index([receiptToken], map: "idx_transactions_receipt_token")
+  @@map("transactions")
+}
+
+model Agent {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId              String                    @map("merchant_id") @db.Uuid
+  name                    String
+  description             String?
+  definitionUrl           String?                   @map("definition_url")
+  method                  String                    @default("POST")
+  protectedEndpoints      Json?                     @default("[]") @map("protected_endpoints")
+  status                  String                    @default("active")
+  createdAt               DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime                  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  x402PriceUsd            String?                   @map("x402_price_usd")
+  maxAmountUsd            String?                   @map("max_amount_usd")
+  dailyLimitUsd           String?                   @map("daily_limit_usd")
+  authPolicy              String                    @default("require_signature") @map("auth_policy")
+  endpointUrl             String?                   @map("endpoint_url")
+  agent_mock_transactions agent_mock_transactions[]
+  merchant                User                      @relation(fields: [merchantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([merchantId, createdAt(sort: Desc)])
+  @@map("agents")
+}
+
+model ApiKey {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId String    @map("merchant_id") @db.Uuid
+  name       String
+  secretKey  String    @map("secret_key")
+  enabled    Boolean   @default(true)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastUsed   DateTime? @map("last_used") @db.Timestamptz(6)
+  keyPrefix  String?   @map("key_prefix") @db.VarChar(16)
+  merchant   User      @relation(fields: [merchantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([keyPrefix])
+  @@map("api_keys")
+}
+
+model Customer {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId        String              @map("merchant_id") @db.Uuid
+  name              String?
+  email             String?
+  phone             String?
+  address           Json?
+  createdAt         DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  status            String?             @default("active")
+  checkout_sessions checkout_sessions[]
+  merchant          Merchant            @relation(fields: [merchantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  invoices          invoices[]
+  subscriptions     subscriptions[]
+  transactions      Transaction[]
+  usage_alerts      usage_alerts[]
+  usage_events      usage_events[]
+
+  @@unique([merchantId, email], map: "customers_merchant_email_unique")
+  @@index([merchantId, createdAt(sort: Desc)], map: "idx_customers_merchant_created")
+  @@map("customers")
+}
+
+model WebhookEndpoint {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId  String   @map("merchant_id") @db.Uuid
+  url         String
+  description String?
+  secret      String
+  enabled     Boolean  @default(true)
+  events      String[] @default(["*"])
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  merchant    User     @relation(fields: [merchantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("webhook_endpoints")
+}
+
+model AdminUser {
+  id                   String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                String                  @unique
+  passwordHash         String                  @map("password_hash")
+  name                 String
+  role                 AdminRole               @default(VIEWER)
+  twoFactorSecret      String?                 @map("two_factor_secret")
+  twoFactorEnabled     Boolean                 @default(false) @map("two_factor_enabled")
+  twoFactorBackupCodes String[]                @default([]) @map("two_factor_backup_codes")
+  avatarUrl            String?                 @map("avatar_url")
+  lastLoginAt          DateTime?               @map("last_login_at") @db.Timestamptz(6)
+  lastLoginIp          String?                 @map("last_login_ip")
+  isActive             Boolean                 @default(true) @map("is_active")
+  createdById          String?                 @map("created_by") @db.Uuid
+  createdAt            DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  auditLogs            AdminAuditLog[]
+  createdBy            AdminUser?              @relation("CreatedByAdmin", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAdmins        AdminUser[]             @relation("CreatedByAdmin")
+  acknowledgedAlerts   MerchantAlert[]         @relation("AcknowledgedBy")
+  resolvedAlerts       MerchantAlert[]         @relation("ResolvedBy")
+  statusChanges        MerchantStatusHistory[]
+
+  @@map("admin_users")
+}
+
+model AdminAuditLog {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminId          String      @map("admin_id") @db.Uuid
+  action           AdminAction
+  targetMerchantId String?     @map("target_merchant_id") @db.Uuid
+  targetAdminId    String?     @map("target_admin_id") @db.Uuid
+  metadata         Json?
+  ipAddress        String?     @map("ip_address")
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  admin            AdminUser   @relation(fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("admin_audit_logs")
+}
+
+model MerchantAlert {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId       String        @map("merchant_id") @db.Uuid
+  type             AlertType
+  severity         AlertSeverity
+  title            String
+  description      String
+  metadata         Json?
+  status           AlertStatus   @default(OPEN)
+  acknowledgedById String?       @map("acknowledged_by") @db.Uuid
+  resolvedById     String?       @map("resolved_by") @db.Uuid
+  resolvedAt       DateTime?     @map("resolved_at") @db.Timestamptz(6)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  acknowledgedBy   AdminUser?    @relation("AcknowledgedBy", fields: [acknowledgedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  merchant         Merchant      @relation(fields: [merchantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resolvedBy       AdminUser?    @relation("ResolvedBy", fields: [resolvedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("merchant_alerts")
+}
+
+model MerchantStatusHistory {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId     String    @map("merchant_id") @db.Uuid
+  previousStatus String    @map("previous_status")
+  newStatus      String    @map("new_status")
+  changedById    String    @map("changed_by") @db.Uuid
+  reason         String?
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  changedBy      AdminUser @relation(fields: [changedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  merchant       Merchant  @relation(fields: [merchantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("merchant_status_history")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model a2a_tasks {
+  id         String   @id
+  status     String   @default("submitted")
+  history    Json     @default("[]")
+  artifacts  Json     @default("[]")
+  metadata   Json?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @db.Timestamptz(6)
+}
+
+model agent_buyer_purchases {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  buyer_merchant_id  String   @db.Uuid
+  seller_merchant_id String?  @db.Uuid
+  pricing_model_id   String?  @db.Uuid
+  agent_id           String?  @db.Uuid
+  amount_cents       Int
+  currency           String   @default("USD")
+  status             String   @default("active")
+  description        String?
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  users              User     @relation(fields: [buyer_merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([buyer_merchant_id, created_at(sort: Desc)])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model agent_mock_transactions {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id         String   @db.Uuid
+  agent_id            String   @db.Uuid
+  kind                String
+  credits_used        Int?
+  amount_cents        Int?
+  currency            String?  @default("USD")
+  customer_identifier String?
+  description         String?
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  payee_identifier    String?
+  agents              Agent    @relation(fields: [agent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users               User     @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([agent_id, created_at(sort: Desc)])
+  @@index([merchant_id, kind, created_at(sort: Desc)])
+}
+
+model agent_permissions {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id       String    @db.Uuid
+  agent_id          String?   @db.Uuid
+  api_key_id        String?   @db.Uuid
+  permission_type   String    @default("agent")
+  name              String
+  description       String?
+  spend_limit_usd   String?
+  timeframe         String?   @default("monthly")
+  pricing_model_id  String?   @db.Uuid
+  auth_policy       String    @default("require_signature")
+  mandate_signature String?
+  mandate_signer    String?
+  mandate_nonce     String?
+  mandate_expires   DateTime? @db.Timestamptz(6)
+  status            String    @default("active")
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  revoked_at        DateTime? @db.Timestamptz(6)
+
+  @@index([agent_id], map: "idx_agent_permissions_agent")
+  @@index([merchant_id, status], map: "idx_agent_permissions_merchant_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_logs {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id   String   @db.Uuid
+  event_type    String
+  resource_type String
+  resource_id   String?
+  metadata      Json?    @default("{}")
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  users         User     @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model buyer_wallets {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  privy_did      String   @unique
+  wallet_address String
+  email          String?
+  metadata       Json?    @default("{}")
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([wallet_address])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model checkout_sessions {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id  String        @db.Uuid
+  customer_id  String?       @db.Uuid
+  amount       Decimal       @db.Decimal
+  currency     String        @default("USD")
+  success_url  String?
+  cancel_url   String?
+  status       String        @default("open")
+  line_items   Json?         @default("[]")
+  metadata     Json?         @default("{}")
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  customers    Customer?     @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  transactions Transaction[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model discounts {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id        String    @db.Uuid
+  name               String
+  code               String
+  amount_off         Decimal?  @db.Decimal
+  percent_off        Decimal?  @db.Decimal
+  currency           String    @default("USD")
+  duration           String
+  duration_in_months Int?
+  max_redemptions    Int?
+  valid_until        DateTime? @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  users              User      @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model disputes {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id      String    @db.Uuid
+  payment_id       String?   @db.Uuid
+  amount           Decimal   @default(0) @db.Decimal
+  currency         String    @default("USD")
+  disputed_at      DateTime? @db.Timestamptz(6)
+  expires_at       DateTime? @db.Timestamptz(6)
+  status           String    @default("open")
+  evidence         Json?
+  resolution_notes String?
+  users            User      @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model files {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id String   @db.Uuid
+  name        String
+  type        String
+  size        Int
+  content     Bytes
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       User     @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model idempotency_keys {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  idempotency_key String
+  merchant_id     String   @db.Uuid
+  request_path    String
+  request_params  Json?
+  status          Int
+  response_body   Json?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  users           User     @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([merchant_id, idempotency_key])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model invoices {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id      String          @db.Uuid
+  customer_id      String?         @db.Uuid
+  title            String?
+  description      String?
+  payor_name       String?
+  payor_email      String?
+  amount_due       Decimal         @db.Decimal
+  currency         String?         @default("USD")
+  invoice_number   String?
+  account_code     String?
+  reference        String?
+  status           String          @default("draft")
+  due_date         DateTime?       @db.Timestamptz(6)
+  items            Json?
+  fee_preference   String?
+  payment_type     String?
+  created_at       DateTime        @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  accepted_methods String[]        @default([])
+  payor_address    String?
+  customers        Customer?       @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  merchants        Merchant        @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payment_links    payment_links[]
+  transactions     Transaction[]
+
+  @@index([merchant_id, created_at(sort: Desc)], map: "idx_invoices_merchant_created")
+}
+
+model merchant_bank_accounts {
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id                String    @db.Uuid
+  merchant_name              String?
+  bridge_customer_id         String
+  bridge_external_account_id String?
+  account_label              String?
+  bank_name                  String?
+  last_four                  String?
+  currency                   String    @default("USD")
+  payment_rail               String    @default("ach")
+  status                     String    @default("pending")
+  is_default                 Boolean   @default(true)
+  created_at                 DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime  @default(now()) @db.Timestamptz(6)
+  payouts                    payouts[]
+
+  @@index([bridge_customer_id], map: "idx_merchant_bank_accounts_bridge_customer_id")
+  @@index([merchant_id], map: "idx_merchant_bank_accounts_merchant_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model meter_tiers {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pricing_model_id String         @db.Uuid
+  meter_slug       String
+  up_to            Decimal?       @db.Decimal
+  unit_amount      Decimal        @default(0) @db.Decimal
+  flat_amount      Decimal        @default(0) @db.Decimal
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  pricing_models   pricing_models @relation(fields: [pricing_model_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model native_apps {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id String   @db.Uuid
+  platform    String
+  description String?
+  app_id      String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       User     @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model payment_links {
+  id                       String        @id
+  merchant_id              String        @db.Uuid
+  link_name                String?
+  payment_name             String?
+  amount                   Decimal?      @default(0) @db.Decimal
+  description              String?
+  image_url                String?
+  fee_preference           String?
+  created_at               DateTime      @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  cta                      String?       @default("pay")
+  confirmation_type        String?       @default("default")
+  custom_message           String?
+  redirect_url             String?
+  account_code             String?
+  accepted_payment_methods Json?         @default("[\"card\", \"wallet\"]")
+  amount_type              String?       @default("fixed")
+  amount_cents             Int?          @default(0)
+  status                   String?       @default("active")
+  interval                 String?
+  line_items               Json?         @default("[]")
+  invoice_id               String?       @db.Uuid
+  image_ids                String[]      @default([])
+  invoices                 invoices?     @relation(fields: [invoice_id], references: [id], onUpdate: NoAction)
+  merchants                Merchant      @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  transactions             Transaction[]
+}
+
+model payout_ledger {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id  String   @db.Uuid
+  agent_id     String?  @db.Uuid
+  gross_amount Decimal  @db.Decimal
+  fee          Decimal  @default(0) @db.Decimal
+  net_amount   Decimal  @db.Decimal
+  currency     String   @default("USD")
+  x402_tx_hash String?
+  payout_id    String?  @db.Uuid
+  status       String   @default("pending")
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  payouts      payouts? @relation(fields: [payout_id], references: [id], onUpdate: NoAction)
+
+  @@index([merchant_id, status], map: "idx_payout_ledger_merchant_status")
+  @@index([payout_id], map: "idx_payout_ledger_payout_id")
+}
+
+model payouts {
+  id                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id            String                  @db.Uuid
+  bank_account_id        String?                 @db.Uuid
+  amount                 Decimal                 @db.Decimal
+  currency               String                  @default("USD")
+  bridge_transfer_id     String?
+  transaction_count      Int                     @default(0)
+  status                 String                  @default("processing")
+  created_at             DateTime                @default(now()) @db.Timestamptz(6)
+  completed_at           DateTime?               @db.Timestamptz(6)
+  payout_ledger          payout_ledger[]
+  merchant_bank_accounts merchant_bank_accounts? @relation(fields: [bank_account_id], references: [id], onUpdate: NoAction)
+
+  @@index([bridge_transfer_id], map: "idx_payouts_bridge_transfer_id")
+  @@index([merchant_id, created_at(sort: Desc)], map: "idx_payouts_merchant_created")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model plan_limits {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pricing_model_id String         @db.Uuid
+  meter_slug       String
+  aggregation_type String         @default("sum")
+  max_amount       Decimal        @db.Decimal
+  period           String         @default("monthly")
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  pricing_models   pricing_models @relation(fields: [pricing_model_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pricing_features {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id      String         @db.Uuid
+  pricing_model_id String         @db.Uuid
+  name             String
+  slug             String
+  description      String?
+  type             String         @default("Toggle")
+  status           String         @default("Active")
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  users            User           @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pricing_models   pricing_models @relation(fields: [pricing_model_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([merchant_id, pricing_model_id, slug])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pricing_model_history {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pricing_model_id String         @db.Uuid
+  merchant_id      String         @db.Uuid
+  old_name         String?
+  new_name         String?
+  changed_at       DateTime       @default(now()) @db.Timestamptz(6)
+  users            User           @relation(fields: [merchant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pricing_models   pricing_models @relation(fields: [pricing_model_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pricing_models {
+  id                             String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id                    String                           @db.Uuid
+  name                           String?
+  products_count                 Int                              @default(0)
+  is_default                     Boolean                          @default(false)
+  created_at                     DateTime                         @default(now()) @db.Timestamptz(6)
+  meter_tiers                    meter_tiers[]
+  plan_limits                    plan_limits[]
+  pricing_features               pricing_features[]
+  pricing_model_history          pricing_model_history[]
+  users                          User                             @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products                       products[]
+  subscription_scheduled_changes subscription_scheduled_changes[]
+  subscriptions                  subscriptions[]
+  usage_meters                   usage_meters[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model products {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pricing_model_id  String?         @db.Uuid
+  name              String
+  amount            Decimal?        @db.Decimal
+  currency          String?         @default("USD")
+  price_type        String?
+  status            String?         @default("Active")
+  slug              String?
+  created_at        DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?       @default(now()) @db.Timestamptz(6)
+  features          String[]        @default([])
+  description       String?
+  image_url         String?
+  meter_slug        String?
+  pricing_structure String?         @default("fixed")
+  pricing_models    pricing_models? @relation(fields: [pricing_model_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model recurring_payments {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id   String    @db.Uuid
+  plan_name     String
+  payer_name    String?
+  payer_contact String?
+  amount        Decimal   @default(0) @db.Decimal
+  currency      String    @default("USD")
+  status        String    @default("active")
+  frequency     String?
+  payments_left Int?
+  most_recent   DateTime? @db.Timestamptz(6)
+  next_payment  DateTime? @db.Timestamptz(6)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  users         User      @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model refunds {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id    String      @db.Uuid
+  transaction_id String
+  amount         Decimal     @db.Decimal
+  reason         String?
+  status         String      @default("succeeded")
+  created_at     DateTime    @default(now()) @db.Timestamptz(6)
+  transactions   Transaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model settlements {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id       String    @db.Uuid
+  amount            Decimal   @db.Decimal
+  status            String?   @default("pending")
+  processed_at      DateTime? @db.Timestamptz(6)
+  currency          String?   @default("USD")
+  transaction_count Decimal?  @default(0) @db.Decimal
+  bank              String?
+  created_at        DateTime  @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  merchants         Merchant  @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model subscription_scheduled_changes {
+  id                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id          String         @db.Uuid
+  subscription_id      String         @db.Uuid
+  new_pricing_model_id String         @db.Uuid
+  scheduled_for        DateTime       @db.Timestamptz(6)
+  status               String         @default("pending")
+  created_at           DateTime       @default(now()) @db.Timestamptz(6)
+  users                User           @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pricing_models       pricing_models @relation(fields: [new_pricing_model_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subscriptions        subscriptions  @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model subscriptions {
+  id                             String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id                    String                           @db.Uuid
+  customer_id                    String                           @db.Uuid
+  pricing_model_id               String                           @db.Uuid
+  status                         String                           @default("active")
+  current_period_start           DateTime?                        @default(now()) @db.Timestamptz(6)
+  current_period_end             DateTime?                        @db.Timestamptz(6)
+  created_at                     DateTime                         @default(now()) @db.Timestamptz(6)
+  billing_interval               String                           @default("monthly")
+  subscription_scheduled_changes subscription_scheduled_changes[]
+  customers                      Customer                         @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                          User                             @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pricing_models                 pricing_models                   @relation(fields: [pricing_model_id], references: [id], onUpdate: NoAction)
+
+  @@index([merchant_id, status], map: "idx_subscriptions_merchant_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model usage_alerts {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id  String    @db.Uuid
+  customer_id  String    @db.Uuid
+  meter_slug   String
+  threshold    Decimal   @db.Decimal
+  triggered_at DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  customers    Customer  @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users        User      @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model usage_events {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id String   @db.Uuid
+  customer_id String   @db.Uuid
+  meter_slug  String
+  amount      Decimal  @default(1) @db.Decimal
+  metadata    Json?    @default("{}")
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  customers   Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       User     @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at])
+  @@index([customer_id])
+  @@index([merchant_id])
+  @@index([meter_slug])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model usage_meters {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id      String         @db.Uuid
+  pricing_model_id String         @db.Uuid
+  name             String
+  slug             String
+  aggregation      String         @default("sum")
+  currency         String         @default("USD")
+  amount           Decimal?       @db.Decimal
+  events_per_unit  Int            @default(1)
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  users            User           @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pricing_models   pricing_models @relation(fields: [pricing_model_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([merchant_id, pricing_model_id, slug])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model webhook_events {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchant_id       String    @db.Uuid
+  type              String
+  payload           Json
+  status            String    @default("pending")
+  delivery_attempts Int       @default(0)
+  last_attempt_at   DateTime? @db.Timestamptz(6)
+  next_attempt_at   DateTime? @default(now()) @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  users             User      @relation(fields: [merchant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  SUPPORT
+  VIEWER
+}
+
+enum AdminAction {
+  VIEW_MERCHANT
+  SUSPEND_MERCHANT
+  ACTIVATE_MERCHANT
+  EDIT_MERCHANT
+  VIEW_TRANSACTIONS
+  VIEW_HEATMAPS
+  EXPORT_DATA
+  MANAGE_ADMIN_USER
+  LOGIN
+  LOGOUT
+  FAILED_LOGIN
+  VIEW_SENSITIVE_FIELDS
+  RESOLVE_ALERT
+  ACKNOWLEDGE_ALERT
+  DISMISS_ALERT
+}
+
+enum AlertType {
+  HIGH_CHARGEBACK_RATE
+  UNUSUAL_VOLUME_SPIKE
+  AGENT_ANOMALY
+  FAILED_WEBHOOKS
+  DORMANT_ACCOUNT
+  KYC_INCOMPLETE
+  PAYOUT_FAILURE
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
