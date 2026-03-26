@@ -5,8 +5,8 @@ export function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || ""
   const url = request.nextUrl.clone()
 
-  // Handle admin subdomain
-  if (hostname.startsWith("admin.") || hostname.startsWith("localhost")) {
+  // Handle admin subdomain (always apply - this is an admin-only app)
+  if (true || hostname.startsWith("admin.") || hostname.startsWith("localhost")) {
     // Public admin routes - no auth required
     if (url.pathname === "/login" || url.pathname.startsWith("/api/admin/auth")) {
       return NextResponse.next()
