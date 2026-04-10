@@ -805,12 +805,11 @@ export default function MerchantDetailPage() {
             <div style={{ paddingTop: "1rem" }}>
               <Tile>
                 <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>PostHog Heatmaps</h3>
-                {merchant.posthog_distinct_id ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                     <Tile style={{ backgroundColor: "var(--cds-layer-01)" }}>
                       <p style={{ fontSize: "0.875rem", color: "var(--cds-text-secondary)" }}>PostHog Distinct ID</p>
                       <p style={{ fontFamily: "monospace", fontSize: "0.875rem", marginTop: "0.25rem" }}>
-                        {merchant.posthog_distinct_id}
+                        {merchant.posthog_distinct_id ?? merchant.id}
                       </p>
                     </Tile>
                     <div style={{
@@ -828,22 +827,6 @@ export default function MerchantDetailPage() {
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <div style={{
-                    border: "2px dashed var(--cds-border-subtle)",
-                    borderRadius: "4px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "5rem 1.5rem",
-                  }}>
-                    <p style={{ color: "var(--cds-text-secondary)", textAlign: "center" }}>PostHog heatmaps will be loaded here</p>
-                    <p style={{ color: "var(--cds-text-helper)", fontSize: "0.875rem", textAlign: "center", marginTop: "0.5rem", maxWidth: "28rem" }}>
-                      No PostHog distinct ID configured for this merchant. Set up PostHog integration in the merchant&apos;s dashboard to enable session recording and heatmap data.
-                    </p>
-                  </div>
-                )}
               </Tile>
             </div>
           </TabPanel>
